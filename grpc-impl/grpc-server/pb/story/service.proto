@@ -1,0 +1,30 @@
+syntax = "proto3"; 
+package pb.story;
+option go_package = "pb/story";
+
+// Define argument request & response 
+message FindByIDRequest {
+	int64 id = 1;
+}
+
+message FindAllRequest {
+	int64 page = 1;
+	int64 limit= 2;
+}
+
+// Define entity story & list story (sbg response)
+message Story {
+	int64 id = 1; 
+	string title = 2;
+    int64 ids = 3;
+}
+
+message Stories {
+	repeated Story stories = 1;
+}
+
+// Define RPC service
+service StoryService {	
+	rpc FindByID(FindByIDRequest) returns (Story);
+	rpc FindAll(FindAllRequest) returns (Stories);
+}
