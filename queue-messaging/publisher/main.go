@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"queue-messaging/task"
+	"sync"
 
 	"github.com/hibiken/asynq"
 )
@@ -16,19 +18,29 @@ func main() {
 	client := asynq.NewClient(redisConn)
 	defer client.Close()
 
-	// 3. Prepare payload
-	payload, _ := json.Marshal(task.SendEmailPayload{
-		From:    "john@gmail.com",
-		To:      "mark@yahoo.com",
-		Subject: "Test Queue",
-		Message: "Mencoba queue messaging",
-	})
-
-	// 4. Create task
-	queueTask := asynq.NewTask(task.SendEmailTask, payload)
-
 	// 5. Enqueue (Publish)
-	client.Enqueue(queueTask)
+	var wg sync.WaitGroup
+	wg.Add(20)
+
+	for i := 0; i < 20; i++ {
+		go func(i int) {
+			defer wg.Done()
+			// 3. Prepare payload
+			payload, _ := json.Marshal(task.SendEmailPayload{
+				From:    "john@gmail.com",
+				To:      "mark@yahoo.com",
+				Subject: fmt.Sprintf("Test Queue %d", i),
+				Message: "Mencoba queue messaging",
+			})
+
+			// 4. Create task
+			queueTask := asynq.NewTask(task.SendEmailTask, payload)
+
+			client.Enqueue(queueTask)
+		}(i)
+	}
+
+	wg.Wait()
 
 	log.Println("Email berhasil dikirim!")
 }

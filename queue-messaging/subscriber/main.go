@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"queue-messaging/task"
+	"time"
 
 	"github.com/hibiken/asynq"
 )
@@ -14,13 +16,19 @@ func main() {
 
 	// 2. Init asynq server
 	asynqServer := asynq.NewServer(redisConn, asynq.Config{
-		Concurrency: 10,
+		Concurrency: 2,
 	})
 
 	// 3. Init server mux
 	mux := asynq.NewServeMux()
 	mux.HandleFunc(task.SendEmailTask, func(ctx context.Context, t *asynq.Task) error {
-		log.Println(string(t.Payload()))
+		time.Sleep(2 * time.Second)
+
+		var payload task.SendEmailPayload
+		json.Unmarshal(t.Payload(), &payload)
+
+		log.Printf("Handle send email for subject %s", payload.Subject)
+
 		return nil
 	})
 
